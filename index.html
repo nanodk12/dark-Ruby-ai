@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Ruby AI</title>
+
+    <!-- Ruby's Dark Red Favicon -->
+    <link rel="icon" type="image/png" href="Ruby.png">
+
+    <style>
+        :root {
+            --dark-red: #8B0000;
+            --darker-red: #5E0000;
+            --ruby-text: #FF4500;
+            --chat-bg: #121212;
+            --message-bg: #1E1E1E;
+            --user-bg: #8B0000;
+            --bot-border: #5E0000;
+            --input-bg: #2D2D2D;
+            --text-color: #E0E0E0;
+            --error-bg: #400000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            min-height: 100vh;
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        /* Full-Screen Chatbot */
+        #chatbot-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.3);
+        }
+
+        /* Chat Header */
+        #chat-header {
+            background: linear-gradient(90deg, var(--dark-red), var(--ruby-text));
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--bot-border);
+        }
+
+        #chat-header h1 {
+            font-size: 28px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        #chat-header .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        /* Chat Messages Area */
+        #chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: var(--chat-bg);
+            scrollbar-width: thin;
+            scrollbar-color: var(--dark-red) var(--chat-bg);
+        }
+
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat-messages::-webkit-scrollbar-track {
+            background: var(--chat-bg);
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb {
+            background-color: var(--dark-red);
+            border-radius: 4px;
+        }
+
+        .message {
+            margin: 10px;
+            padding: 15px 20px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+            background: var(--message-bg);
+            border-left: 3px solid var(--ruby-text);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user {
+            background: var(--user-bg);
+            color: white;
+            margin-left: auto;
+            border-left: 3px solid #FF4500;
+        }
+
+        .bot {
+            background: var(--message-bg);
+            border: 1px solid var(--bot-border);
+            margin-right: auto;
+        }
+
+        .error {
+            background: var(--error-bg) !important;
+            border-left: 3px solid #FF0000 !important;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--ruby-text);
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Chat Input Area */
+        #chat-input {
+            padding: 20px;
+            background: var(--input-bg);
+            border-top: 1px solid var(--bot-border);
+            display: flex;
+            border-radius: 0 0 10px 10px;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid var(--bot-border);
+            border-radius: 30px;
+            outline: none;
+            font-size: 16px;
+            background: var(--chat-bg);
+            color: var(--text-color);
+        }
+
+        #user-input::placeholder {
+            color: #888;
+        }
+
+        #send-button {
+            background: linear-gradient(90deg, var(--dark-red), var(--ruby-text));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        #send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 0, 0, 0.6);
+        }
+
+        #send-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Welcome message styling */
+        .welcome-message {
+            text-align: center;
+            color: #aaa;
+            font-style: italic;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Full-Screen Chatbot -->
+    <div id="chatbot-container">
+        <div id="chat-header">
+            <h1>Ruby</h1>
+            <div class="subtitle">Your Dark Ruby AI Assistant</div>
+        </div>
+        <div id="chat-messages">
+            <div class="welcome-message">
+                Welcome to Ruby's dark domain! 🔴<br>
+                Ask me anything and I'll glimmer with answers...
+            </div>
+        </div>
+        <div id="chat-input">
+            <input id="user-input" type="text" placeholder="Ask Ruby in the dark..." autocomplete="off" />
+            <button id="send-button" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - Mistral AI
+        const MISTRAL_API_KEY = '27spXUGYdvD8WksWJxwWT7qgZQZRFSIr'; // Get from https://console.mistral.ai/
+        const MISTRAL_API_URL = 'https://api.mistral.ai/v1/chat/completions';
+
+        // Conversation history storage
+        let conversationHistory = [];
+
+        // Handle Enter key
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Send message to Ruby (Mistral AI)
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            input.value = '';
+            input.disabled = true;
+            document.getElementById('send-button').disabled = true;
+
+            // Show loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot';
+            loadingDiv.innerHTML = '<strong>Ruby:</strong> <span class="loading"></span>';
+            document.getElementById('chat-messages').appendChild(loadingDiv);
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+            try {
+                // Get real AI response from Mistral
+                const aiResponse = await getMistralResponse(message);
+
+                // Replace loading with response
+                loadingDiv.innerHTML = `<strong>Ruby:</strong> ${aiResponse}`;
+            } catch (error) {
+                console.error('Mistral AI Error:', error);
+                loadingDiv.className = 'message bot error';
+                loadingDiv.innerHTML = `<strong>Ruby:</strong> ⚠️ I'm having trouble connecting to the dark servers... ${error.message}`;
+            }
+
+            // Re-enable input
+            input.disabled = false;
+            document.getElementById('send-button').disabled = false;
+            input.focus();
+
+            // Save to conversation history
+            conversationHistory.push({role: "user", content: message});
+        }
+
+        // Add message to chat UI
+        function addMessage(text, sender) {
+            const messages = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + sender;
+
+            if (sender === 'user') {
+                messageDiv.innerHTML = `<strong>You:</strong> ${text}`;
+            } else {
+                messageDiv.innerHTML = `<strong>Ruby:</strong> ${text}`;
+            }
+
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Get response from Mistral AI with conversation memory
+        async function getMistralResponse(prompt) {
+            try {
+                // Add new user message to history
+                conversationHistory.push({role: "user", content: prompt});
+
+                const response = await fetch(MISTRAL_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${MISTRAL_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "mistral-tiny",
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are Ruby, a dark and mysterious AI assistant with a ruby gem theme.
+                                Speak in a gothic, poetic style with occasional emojis.
+                                Always refer to yourself as Ruby.
+                                Your responses should be slightly cryptic but helpful.
+                                Use dark red and ruby themes in your responses.`
+                            },
+                            ...conversationHistory
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 300
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiResponse = data.choices[0].message.content;
+
+                // Add AI response to history
+                conversationHistory.push({role: "assistant", content: aiResponse});
+
+                return aiResponse;
+            } catch (error) {
+                console.error('Error in getMistralResponse:', error);
+                throw error;
+            }
+        }
+
+        // Focus input on load
+        window.onload = function() {
+            document.getElementById('user-input').focus();
+        };
+    </script>
+</body>
+</html>
